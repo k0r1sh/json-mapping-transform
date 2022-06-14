@@ -19,15 +19,21 @@ class JsonMapping
   # @param [String] schema_path The path to the YAML schema
   # @param [Hash] transforms A hash of callable objects (Procs/Lambdas). Keys must match transform names specified in YAML
   def initialize(json_schema, transforms = {})
-    schema = json_schema
+    schema = json_schema.deep_stringify_keys
 
     @conditions = (schema['conditions'] || {}).map do |key, value|
       [key, Object.const_get("Conditions::#{value['class']}").new(value['predicate'])]
     end.to_h
 
     @object_schemas = schema['objects']
-    @transforms = transforms || {}
+    @transforms = transforms.merge(default_transforms)
     @logger = Logger.new($stdout)
+  end
+
+  def default_transforms
+    {
+      'to_array' => -> (val) { [val] }
+    }
   end
 
   ##
@@ -36,7 +42,7 @@ class JsonMapping
   def apply(input_hash)
     raise FormatError, 'Must define objects under the \'objects\' name' if @object_schemas.nil?
 
-    @object_schemas.map { |schema| parse_object(input_hash, schema) }.reduce(&:merge)
+    @object_schemas.map { |schema| parse_object(input_hash.deep_stringify_keys, schema) }.reduce(&:merge)
   end
 
   private
@@ -73,7 +79,32 @@ class JsonMapping
         attrs << attributes_hash
       end
 
-      output[schema['name']] = attrs.length == 1 && schema['path'][-1] != '*' ? attrs[0] : attrs
+      attribute_values = attrs.length == 1 && schema['path'][-1] != '*' ? attrs[0] : attrs
+      attribute_values = @transforms[schema['transform']].call(attribute_values) if schema.key?('transform')
+      output[schema['name']] = attribute_values
+    elsif schema.key?('items')
+      output[schema['name']] = schema['default'].to_a
+
+      object_hash = parse_path(input_hash, schema['path'])
+      return output if object_hash.nil?
+
+      unless object_hash.is_a? Array
+        object_hash = [object_hash]
+      end
+
+      items_values = []
+      object_hash.each do |obj|
+        attributes_hash = {}
+        schema['items'].each do |item|
+          item.each do |attribute|
+            attr_hash = parse_object(obj, attribute)
+            attributes_hash = attributes_hash.merge(attr_hash)
+          end
+          items_values << attributes_hash
+        end
+      end
+
+      output[schema['name']] = items_values
     else # Its a value
       output = map_value(input_hash, schema)
     end
@@ -120,15 +151,14 @@ class JsonMapping
 
     parts = path.split('/')
     value = input_hash
-
     parts.each_with_index do |part, idx|
       if value.nil?
         @logger.warn("Could not find #{path} in #{input_hash}")
         break
       end
-
       if part == '*'
         raise PathError, "#{parts[0, idx].join('/')} in #{input_hash} is not an array" unless value.is_a? Array
+
 
         return value.map { |obj| parse_path(obj, parts[idx + 1..-1].join('/')) }
       else

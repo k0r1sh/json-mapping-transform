@@ -228,3 +228,85 @@ output = JsonMapping.new(path).map(store_fixture)
   "apple": [{ "itemName": "Apples", "price": 0.5, "unit": "lb" }]
 }
 ```
+
+### Items Example
+Array from plain
+```json
+base = { 
+          "members": [
+            {
+              "id": 660159,
+              "email": "test@gmail.com",
+              "last_name": "Nik",
+              "first_name": "Kor",
+              "last_name_id": "1",
+              "first_name_id": "2"
+            }
+          ]
+        }
+```
+JSON scheme
+```json
+scheme = {
+  'objects': [
+    {
+      'name': 'recipients',
+      'path': '/members/*',
+      'attributes': [
+        {
+          'name': 'email',
+          'path': '/email'
+        },
+        {
+          'name': 'values',
+          'path': '/',
+          'items': [
+            [
+              {  'name': 'value',
+                'path': '/last_name'
+              },
+              {
+                'name': 'parameter_id',
+                'path': '/rights'
+              }
+            ],
+            [
+              { 'name': 'value',
+                'path': '/first_name'
+              },
+              {
+                'name': 'parameter_id',
+                'path': '/id'
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+#### Code
+```ruby
+JsonMapping.new(scheme).apply(base)
+```
+#### Output
+{
+  "recipients": [
+    {
+      "email": "test@gmail.com",
+      "values": [
+        {
+          "value": "Nik",
+          "parameter_id": 1
+        },
+        {
+          "value": "Kor",
+          "parameter_id": 2
+        }
+      ]
+    }
+  ]
+}
+```
+
