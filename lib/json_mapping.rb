@@ -18,8 +18,8 @@ class JsonMapping
   ##
   # @param [String] schema_path The path to the YAML schema
   # @param [Hash] transforms A hash of callable objects (Procs/Lambdas). Keys must match transform names specified in YAML
-  def initialize(schema_path, transforms = {})
-    schema = YAML.safe_load(File.read(schema_path))
+  def initialize(json_schema, transforms = {})
+    schema = json_schema
 
     @conditions = (schema['conditions'] || {}).map do |key, value|
       [key, Object.const_get("Conditions::#{value['class']}").new(value['predicate'])]
