@@ -33,7 +33,7 @@ class JsonMapping
   def default_transforms
     {
       'to_array' => -> (val) { [val] },
-      'to_hash' => -> (array) { array.collect{ |item| [item['key'], item['value']]}.to_h  }
+      'to_hash' => ->(array) { array.collect{ |item| [item['key'].downcase, item['value']]}.to_h  }
   end
 
   ##
@@ -42,7 +42,10 @@ class JsonMapping
   def apply(input_hash)
     raise FormatError, 'Must define objects under the \'objects\' name' if @object_schemas.nil?
 
-    @object_schemas.map { |schema| parse_object(input_hash.deep_stringify_keys, schema) }.reduce(&:merge)
+    result = @object_schemas.map { |schema| parse_object(input_hash.deep_stringify_keys, schema) }.reduce(&:merge)
+    return result['unwrap'] if result.is_a?(Hash) and result.include?('unwrap')
+
+    result
   end
 
   private
