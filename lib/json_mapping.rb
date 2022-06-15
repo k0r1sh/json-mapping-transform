@@ -32,8 +32,8 @@ class JsonMapping
 
   def default_transforms
     {
-      'to_array' => -> (val) { [val] }
-    }
+      'to_array' => -> (val) { [val] },
+      'to_hash' => -> (array) { array.collect{ |item| [item['key'], item['value']]}.to_h  }
   end
 
   ##
