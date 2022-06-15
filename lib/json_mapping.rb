@@ -34,6 +34,7 @@ class JsonMapping
     {
       'to_array' => -> (val) { [val] },
       'to_hash' => ->(array) { array.collect{ |item| [item['key'].downcase, item['value']]}.to_h  }
+    }
   end
 
   ##
