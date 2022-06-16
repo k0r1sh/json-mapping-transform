@@ -109,6 +109,46 @@ class JsonMapping
       end
 
       output[schema['name']] = items_values
+    elsif schema.key?('hash')
+      output[schema['name']] = schema['default'].to_a
+
+      object_hash = parse_path(input_hash, schema['path'])
+      return output if object_hash.nil?
+
+      unless object_hash.is_a? Array
+        object_hash = [object_hash]
+      end
+
+      items_values = {}
+      object_hash.each do |obj|
+        schema['hash'].each do |item|
+          attr_hash = parse_object(obj, item)
+          items_values.merge!(attr_hash)
+        end
+      end
+      output[schema['name']] = items_values
+    elsif schema.key?('hash_array')
+      output[schema['name']] = schema['default'].to_a
+
+      object_hash = parse_path(input_hash, schema['path'])
+      return output if object_hash.nil?
+
+      unless object_hash.is_a? Array
+        object_hash = [object_hash]
+      end
+
+      items_values = {}
+      object_hash.each do |obj|
+        schema['hash_array'].each do |item|
+          attr_hash = parse_object(obj, item)
+          
+          key = attr_hash.keys.first
+          items_values[key] = [] unless items_values[key]
+          items_values[key] += attr_hash.values
+        end
+      end
+      items_values.each{ |k,v| v.uniq! }
+      output[schema['name']] = items_values
     else # Its a value
       output = map_value(input_hash, schema)
     end
