@@ -25,6 +25,8 @@ class JsonMapping
       [key, Object.const_get("Conditions::#{value['class']}").new(value['predicate'])]
     end.to_h
 
+    @limitations = schema['limitations'].to_h
+
     @object_schemas = schema['objects']
     @transforms = transforms.merge(default_transforms)
     @logger = Logger.new($stdout)
@@ -104,7 +106,7 @@ class JsonMapping
             attr_hash = parse_object(obj, attribute)
             attributes_hash = attributes_hash.merge(attr_hash)
           end
-          items_values << attributes_hash
+          items_values << attributes_hash unless limited?(attributes_hash, schema['limits'])
         end
       end
 
@@ -129,7 +131,6 @@ class JsonMapping
       output[schema['name']] = items_values
     elsif schema.key?('hash_array')
       output[schema['name']] = schema['default'].to_a
-
       object_hash = parse_path(input_hash, schema['path'])
       return output if object_hash.nil?
 
@@ -154,6 +155,18 @@ class JsonMapping
     end
 
     output
+  end
+
+  def limited?(hash, limits)
+    return false if @limitations.empty? || limits.blank?
+
+    limits.each do |k|
+      v = hash[k]
+      next unless v
+
+      return true if @limitations[k].is_a?(Array) and @limitations[k].exclude?(v)
+    end
+    false
   end
 
   ##
