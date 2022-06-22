@@ -24,7 +24,6 @@ class JsonMapping
     @conditions = (schema['conditions'] || {}).map do |key, value|
       [key, Object.const_get("Conditions::#{value['class']}").new(value['predicate'])]
     end.to_h
-
     @limitations = schema['limitations'].to_h
 
     @object_schemas = schema['objects']
@@ -35,7 +34,7 @@ class JsonMapping
   def default_transforms
     {
       'to_array' => -> (val) { Array.wrap(val).uniq },
-      'to_hash' => -> (array) {  Array.wrap(array).uniq.collect{ |item| [item['key'].downcase, item['value']]}.to_h  }
+      'to_hash' => -> (array) {  Array.wrap(array).uniq.collect{ |item| [item['key'], item['value']]}.to_h  }
     }
   end
 
@@ -160,11 +159,15 @@ class JsonMapping
   def limited?(hash, limits)
     return false if @limitations.empty? || limits.blank?
 
-    limits.each do |k|
-      v = hash[k]
+    limits.each do |limit|
+      next if limit.blank?
+      hash_key = limit.keys.first
+      limit_key = limit.values.first
+
+      v = hash[hash_key]
       next unless v
 
-      return true if @limitations[k].is_a?(Array) and @limitations[k].exclude?(v)
+      return true if @limitations[limit_key].is_a?(Array) and @limitations[limit_key].exclude?(v)
     end
     false
   end
