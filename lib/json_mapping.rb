@@ -34,7 +34,8 @@ class JsonMapping
   def default_transforms
     {
       'to_array' => -> (val) { Array.wrap(val).uniq },
-      'to_hash' => -> (array) {  Array.wrap(array).uniq.collect{ |item| [item['key'], item['value']]}.to_h  }
+      'to_hash' => -> (array) {  Array.wrap(array).uniq.collect{ |item| [item['key'], item['value']]}.to_h  },
+      'max_array_value' => -> (array) { array.is_a?(Array) ? array.max : array }
     }
   end
 
@@ -148,6 +149,8 @@ class JsonMapping
         end
       end
       items_values.each{ |k,v| v.uniq! }
+      items_values = @transforms[schema['transform']].call(items_values) if schema.key?('transform')
+
       output[schema['name']] = items_values
     else # Its a value
       output = map_value(input_hash, schema)
