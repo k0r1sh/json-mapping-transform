@@ -78,12 +78,14 @@ class JsonMapping
 
       attrs = []
       object_hash.each do |obj|
+        valid_hash = true
         attributes_hash = {}
         schema['attributes'].each do |attribute|
           attr_hash = parse_object(obj, attribute)
+          valid_hash = false if attribute['require'] && attr_hash[attribute['name']].blank?
           attributes_hash = attributes_hash.merge(attr_hash)
         end
-        attrs << attributes_hash
+        attrs << attributes_hash if valid_hash
       end
 
       attribute_values = attrs.length == 1 && schema['path'][-1] != '*' ? attrs[0] : attrs
@@ -103,11 +105,13 @@ class JsonMapping
       object_hash.each do |obj|
         attributes_hash = {}
         schema['items'].each do |item|
+          valid_hash = true
           item.each do |attribute|
             attr_hash = parse_object(obj, attribute)
+            valid_hash = false if attribute['require'] && attr_hash[attribute['name']].blank?
             attributes_hash = attributes_hash.merge(attr_hash)
           end
-          items_values << attributes_hash unless limited?(attributes_hash, schema['limits'])
+          items_values << attributes_hash if !limited?(attributes_hash, schema['limits']) && valid_hash
         end
       end
 
