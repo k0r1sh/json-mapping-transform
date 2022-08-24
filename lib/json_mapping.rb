@@ -35,6 +35,8 @@ class JsonMapping
     {
       'to_array' => -> (val) { Array.wrap(val).uniq },
       'to_hash' => -> (array) {  Array.wrap(array).uniq.collect{ |item| [item['key'], item['value']]}.to_h  },
+      'first_array_value' => -> (array) { array.is_a?(Array) ? array.first : array },
+      'last_array_value' => -> (array) { array.is_a?(Array) ? array.last : array },
       'max_array_value' => -> (array) { array.is_a?(Array) ? array.max : array },
       'uniq_array' => -> (array) { array.is_a?(Array) ? array.uniq : array }
     }
