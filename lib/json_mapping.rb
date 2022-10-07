@@ -34,12 +34,29 @@ class JsonMapping
   def default_transforms
     {
       'to_array' => -> (val) { Array.wrap(val).uniq },
-      'to_hash' => -> (array) {  Array.wrap(array).uniq.collect{ |item| [item['key'], item['value']]}.to_h  },
+      'to_hash' => -> (array) { Array.wrap(array).uniq.collect{ |item| [item['key'], item['value']]}.to_h },
       'first_array_value' => -> (array) { array.is_a?(Array) ? array.first : array },
       'last_array_value' => -> (array) { array.is_a?(Array) ? array.last : array },
       'max_array_value' => -> (array) { array.is_a?(Array) ? array.max : array },
-      'uniq_array' => -> (array) { array.is_a?(Array) ? array.uniq : array }
+      'uniq_array' => -> (array) { array.is_a?(Array) ? array.uniq : array },
+      'hashes_array_filter' => -> (array, keys, value) { array.is_a?(Array) ? array.select{|h| h.dig(*keys.split('*')) == value } : array },
+      'hash_value' => -> (hash, key) { hash.is_a?(Hash) ? hash[key] : hash }
     }
+  end
+
+  def apply_transforms(transform, values)
+    return values unless transform
+
+    if transform.is_a?(Array)
+      transform.each do |t|
+        transform_with_params = t.split('|')
+        values = @transforms[transform_with_params.first].call(values, *transform_with_params[1..-1])
+      end
+    else
+      transform_with_params = transform.split('|')
+      values = @transforms[transform_with_params.first].call(values, *transform_with_params[1..-1])
+    end
+    values
   end
 
   ##
@@ -91,7 +108,7 @@ class JsonMapping
       end
 
       attribute_values = attrs.length == 1 && schema['path'][-1] != '*' ? attrs[0] : attrs
-      attribute_values = @transforms[schema['transform']].call(attribute_values) if schema.key?('transform')
+      attribute_values = apply_transforms(schema['transform'], attribute_values)
       output[schema['name']] = attribute_values
     elsif schema.key?('items')
       output[schema['name']] = schema['default'].to_a
@@ -116,7 +133,7 @@ class JsonMapping
           items_values << attributes_hash if !limited?(attributes_hash, schema['limits']) && valid_hash
         end
       end
-
+      items_values = apply_transforms(schema['transform'], items_values)
       output[schema['name']] = items_values
     elsif schema.key?('hash')
       output[schema['name']] = schema['default'].to_a
@@ -155,9 +172,12 @@ class JsonMapping
           items_values[key] += attr_hash.values
         end
       end
-      items_values.each{ |k,v| v.uniq! }
-      items_values = @transforms[schema['transform']].call(items_values) if schema.key?('transform')
 
+      items_values = items_values.each_with_object({}) do |(k, v), a|
+                      v.uniq!
+                      v = apply_transforms(schema['transform'], v)
+                      a[k] = v
+                    end
       output[schema['name']] = items_values
     else # Its a value
       output = map_value(input_hash, schema)
@@ -205,7 +225,7 @@ class JsonMapping
       raise TransformError, "Undefined transform named #{schema['transform']}" unless @transforms.key?(schema['transform'])
       raise TransformError, 'Transforms should respond to the \'call\' method' unless @transforms[schema['transform']].respond_to?(:call)
 
-      value = @transforms[schema['transform']].call(value)
+      value = apply_transforms(schema['transform'], value)
     end
 
     output[schema['name']] = value
