@@ -93,3 +93,41 @@ scheme = [
         ]
 JsonMapping.new({ objects: scheme, 'limitations': { }}).apply(j)
 ```
+### 2. Вложенные атрибуты
+Позволяет завернуть результат в хеш
+```ruby
+require 'json_mapping'
+
+j = {
+  "name": "Trader Joe's",
+  "location": "Berkeley, California",
+  "weeklyVisitors": 5000,
+  "storeId": 1234,
+  "employees": [
+    { "name": "Jim Shoes" },
+    { "name": "Kay Oss" }
+  ],
+  "inventory": [
+    { "itemName": "Apples", "price": 0.5, "unit": "lb" },
+    { "itemName": "Oranges", "price": 2, "unit": "lb" },
+    { "itemName": "Bag of Carrots", "price": 1.5, "unit": "count" }
+  ]
+}
+
+scheme = [
+          {
+            name: 'Store',
+            nested: [
+              {
+                name: 'name',
+                path: '/name'
+              },
+              {
+                name: 'location',
+                path: '/location'
+              }
+            ]
+          }
+         ]
+JsonMapping.new({ objects: scheme, 'limitations': { }}).apply(j)
+```

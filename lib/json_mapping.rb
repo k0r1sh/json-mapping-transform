@@ -110,6 +110,12 @@ class JsonMapping
       attribute_values = attrs.length == 1 && schema['path'][-1] != '*' ? attrs[0] : attrs
       attribute_values = apply_transforms(schema['transform'], attribute_values)
       output[schema['name']] = attribute_values
+    elsif schema.key?('nested')
+      nested_hash = {}
+      schema['nested'].each do |attribute|
+        nested_hash.merge! map_value(input_hash, attribute)
+      end
+      output[schema['name']] = nested_hash
     elsif schema.key?('items')
       output[schema['name']] = schema['default'].to_a
 
