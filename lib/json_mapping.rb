@@ -80,7 +80,7 @@ class JsonMapping
   # @param [Hash] schema A hash representing the schema which should be applied to the input
   # Raises +FormatError+ if +schema+ is not a +Hash+ or has no key +name+
   # @return [Hash] The output object
-  def parse_object(input_hash, schema)
+  def parse_object(input_hash, schema, parameters = {})
     raise FormatError, "Object should be a hash: #{schema}" unless schema.is_a? Hash
     raise FormatError, "Object needs a name: #{schema}" unless schema.key?('name')
 
@@ -142,6 +142,35 @@ class JsonMapping
       end
       items_values = apply_transforms(schema['transform'], items_values)
       output[schema['name']] = items_values
+    elsif schema.key?('items_all')
+      output[schema['name']] = schema['default'].to_a
+
+      object_hash = parse_path(input_hash, schema['path'])
+      return output if object_hash.nil?
+
+      unless object_hash.is_a? Array
+        object_hash = [object_hash]
+      end
+
+      items_values = []
+      object_hash.each do |obj|
+        obj.each do |key, value|
+          next if schema['exclude'].to_a.include?(key)
+
+          attributes_hash = {}
+          schema['items_all'].each do |item|
+            valid_hash = true
+            item.each do |attribute|
+              attr_hash = parse_object(value, attribute, {'key_name' => key})
+              valid_hash = false if attribute['require'] && attr_hash[attribute['name']].blank?
+              attributes_hash = attributes_hash.merge(attr_hash)
+            end
+            items_values << attributes_hash if !limited?(attributes_hash, schema['limits']) && valid_hash
+          end
+        end
+      end
+      items_values = apply_transforms(schema['transform'], items_values)
+      output[schema['name']] = items_values
     elsif schema.key?('hash')
       output[schema['name']] = schema['default'].to_a
 
@@ -187,10 +216,22 @@ class JsonMapping
                     end
       output[schema['name']] = items_values
     else # Its a value
-      output = map_value(input_hash, schema)
+      output = map_value(input_hash, schema, parameters)
     end
 
     output
+  end
+
+  def parametrize(str, parameters)
+    return nil if str.nil?
+    return str if parameters.empty?
+    return str unless str.is_a?(String)
+
+    res = str
+    parameters.each do |key, value|
+      res = str.gsub("[%#{key}%]", value)
+    end
+    res
   end
 
   def limited?(hash, limits)
@@ -214,11 +255,11 @@ class JsonMapping
   # @param [Hash] input_hash The input hash to be mapped
   # @param [Hash] schema The schema which should be applied
   # @return [Hash] A Hash which represents the applied schema
-  def map_value(input_hash, schema)
+  def map_value(input_hash, schema, parameters = {})
     raise FormatError, "Schema should be a hash: #{schema}" unless schema.is_a? Hash
 
     output = {}
-    output[schema['name']] = schema['default']
+    output[schema['name']] = parametrize(schema['default'], parameters)
     return output if schema['path'].nil?
 
     value = parse_path(input_hash, schema['path'])
@@ -235,7 +276,7 @@ class JsonMapping
       value = apply_transforms(schema['transform'], value)
     end
 
-    output[schema['name']] = value
+    output[schema['name']] = parametrize(value, parameters)
     output
   end
 
