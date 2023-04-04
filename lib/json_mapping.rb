@@ -235,7 +235,7 @@ class JsonMapping
 
     res = str
     parameters.each do |key, value|
-      res = str.gsub("[%#{key}%]", value)
+      res = str.gsub("[%#{key.downcase}%]", value)
     end
     res
   end
