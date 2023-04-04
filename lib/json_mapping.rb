@@ -215,6 +215,12 @@ class JsonMapping
                       a[k] = v
                     end
       output[schema['name']] = items_values
+    elsif schema.key?('merge_arrays')
+      merged = []
+      schema['merge_arrays'].each do |path|
+        merged += parse_path(input_hash, path).to_a
+      end
+      output[schema['name']] = merged.uniq
     else # Its a value
       output = map_value(input_hash, schema, parameters)
     end

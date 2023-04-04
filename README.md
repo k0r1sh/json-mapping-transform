@@ -106,6 +106,12 @@ scheme = [
                 'path': '/price',
               }
             ]
+          },
+          {
+            'name': 'merged',
+            'merge_arrays': [
+              '/employees', '/inventory'
+            ]
           }
         ]
 JsonMapping.new({ objects: scheme, 'limitations': { }}).apply(j)
@@ -121,7 +127,13 @@ JsonMapping.new({ objects: scheme, 'limitations': { }}).apply(j)
    {"value"=>[{"itemName"=>"Apples", "price"=>0.5, "unit"=>"lb"}, {"itemName"=>"Oranges", "price"=>2, "unit"=>"lb"}, {"itemName"=>"Bag of Carrots", "price"=>1.5, "unit"=>"count"}],
     "parameter_id"=>"%%inventory%%"}],
  "hash_examlpe"=>{"value"=>"Trader Joe's", "parameter_id"=>"Berkeley, California"},
- "hash_array_examlpe"=>{"item_name"=>"Bag of Carrots", "price"=>1.5}}
+ "hash_array_examlpe"=>{"item_name"=>"Bag of Carrots", "price"=>1.5},
+ "merged"=>
+  [{"name"=>"Jim Shoes"},
+   {"name"=>"Kay Oss"},
+   {"itemName"=>"Apples", "price"=>0.5, "unit"=>"lb"},
+   {"itemName"=>"Oranges", "price"=>2, "unit"=>"lb"},
+   {"itemName"=>"Bag of Carrots", "price"=>1.5, "unit"=>"count"}]}
 ```
 ### 2. Вложенные атрибуты
 Позволяет завернуть результат в хеш
