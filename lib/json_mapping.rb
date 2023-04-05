@@ -143,6 +143,7 @@ class JsonMapping
       items_values = apply_transforms(schema['transform'], items_values)
       output[schema['name']] = items_values
     elsif schema.key?('items_all')
+      exclude = schema['exclude'].to_a.map(&:downcase)
       output[schema['name']] = schema['default'].to_a
 
       object_hash = parse_path(input_hash, schema['path'])
@@ -155,7 +156,7 @@ class JsonMapping
       items_values = []
       object_hash.each do |obj|
         obj.each do |key, value|
-          next if schema['exclude'].to_a.include?(key)
+          next if exclude.include?(key.downcase)
 
           attributes_hash = {}
           schema['items_all'].each do |item|
