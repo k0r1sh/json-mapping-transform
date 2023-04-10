@@ -65,8 +65,8 @@ class JsonMapping
   # @return [Array] An array of output hashes representing the mapped objects
   def apply(input_hash)
     raise FormatError, 'Must define objects under the \'objects\' name' if @object_schemas.nil?
-
-    result = @object_schemas.map { |schema| parse_object(input_hash.deep_stringify_keys, schema) }.reduce(&:merge)
+    normalized_input_hash = input_hash.deep_stringify_keys.deep_transform_keys(&:downcase)
+    result = @object_schemas.map { |schema| parse_object(normalized_input_hash, schema) }.reduce(&:merge)
     return result['unwrap'] if result.is_a?(Hash) and result.include?('unwrap')
 
     result
