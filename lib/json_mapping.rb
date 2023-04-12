@@ -168,7 +168,7 @@ class JsonMapping
           schema['items_all'].each do |item|
             valid_hash = true
             item.each do |attribute|
-              attr_hash = parse_object(value, attribute, {'key_name' => key})
+              attr_hash = parse_object(value, attribute, {'key_name' => key[0..50]})
               valid_hash = false if attribute['require'] && attr_hash[attribute['name']].blank?
               attributes_hash = attributes_hash.merge(attr_hash)
             end
