@@ -47,7 +47,7 @@ class JsonMapping
         array.is_a?(Array) ? array.select { |val| val.to_s.match?(Regexp.new(regex))
       }
  : [] },
-      'json_parse' => -> (value) { value.present? ? JSON.parse(value) : {} }
+      'json_parse' => -> (value) { value.present? ? begin JSON.parse(value) rescue value end : {} }
     }
   end
 
