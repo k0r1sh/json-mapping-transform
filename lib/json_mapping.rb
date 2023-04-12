@@ -33,7 +33,7 @@ class JsonMapping
 
   def default_transforms
     {
-      'to_array' => -> (val) { Array.wrap(val).uniq },
+      'to_array' => -> (val) { Array.wrap(val).uniq.compact },
       'to_hash' => -> (array) { Array.wrap(array).uniq.collect{ |item| [item['key'], item['value']]}.to_h },
       'first_array_value' => -> (array) { array.is_a?(Array) ? array.first : array },
       'last_array_value' => -> (array) { array.is_a?(Array) ? array.last : array },
@@ -41,6 +41,12 @@ class JsonMapping
       'uniq_array' => -> (array) { array.is_a?(Array) ? array.uniq : array },
       'hashes_array_filter' => -> (array, keys, value) { array.is_a?(Array) ? array.select{|h| h.dig(*keys.split('*')) == value } : array },
       'hash_value' => -> (hash, key) { hash.is_a?(Hash) ? hash[key] : hash },
+      'hash_values' => -> (hash) { hash.is_a?(Hash) ? hash.values : hash },
+      'hash_keys' => -> (hash) { hash.is_a?(Hash) ? hash.keys : hash },
+      'array_select_regex' => -> (array, regex) {
+        array.is_a?(Array) ? array.select { |val| val.to_s.match?(Regexp.new(regex))
+      }
+ : [] },
       'json_parse' => -> (value) { value.present? ? JSON.parse(value) : {} }
     }
   end
@@ -190,6 +196,14 @@ class JsonMapping
         end
       end
       output[schema['name']] = items_values
+    elsif schema.key?('array')
+      output[schema['name']] = schema['default'].to_a
+
+      array = []
+      schema['array'].each do |item|
+        array << parse_object(input_hash, item)&.values
+      end
+      output[schema['name']] = apply_transforms(schema['transform'], array.flatten.uniq.compact)
     elsif schema.key?('hash_array')
       output[schema['name']] = schema['default'].to_a
       object_hash = parse_path(input_hash, schema['path'])
@@ -221,7 +235,7 @@ class JsonMapping
       schema['merge_arrays'].each do |path|
         merged += parse_path(input_hash, path).to_a
       end
-      output[schema['name']] = merged.uniq
+      output[schema['name']] = apply_transforms(schema['transform'], merged.uniq)
     else # Its a value
       output = map_value(input_hash, schema, parameters)
     end
@@ -277,9 +291,6 @@ class JsonMapping
     end
 
     if schema.key?('transform') && value != output[schema['name']]
-      raise TransformError, "Undefined transform named #{schema['transform']}" unless @transforms.key?(schema['transform'])
-      raise TransformError, 'Transforms should respond to the \'call\' method' unless @transforms[schema['transform']].respond_to?(:call)
-
       value = apply_transforms(schema['transform'], value)
     end
 

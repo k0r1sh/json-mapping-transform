@@ -93,6 +93,19 @@ scheme = [
             ]
           },
           {
+            'name': 'array_values', # массив значений
+            'array': [
+              {
+                name: 'value',
+                path: '/name',
+              },
+              {
+                name: 'parameter_id',
+                path: '/location'
+              }
+            ]
+          },
+          {
             'name': 'hash_array_examlpe', # Хеш с массивом в значении (в данном примере к массиву применяется трансформация last_array_value
             'path': '/inventory/*',
             'transform': 'last_array_value',
@@ -118,22 +131,23 @@ JsonMapping.new({ objects: scheme, 'limitations': { }}).apply(j)
 
 {"name"=>"Trader Joe's",
  "profits"=>0,
- "attributes_examlpe"=>[{"item_name"=>"Apples", "price"=>0.5}, {"item_name"=>"Oranges", "price"=>2}, {"item_name"=>"Bag of Carrots", "price"=>1.5}],
+ "attributes_examlpe"=>[{"item_name"=>nil, "price"=>0.5}, {"item_name"=>nil, "price"=>2}, {"item_name"=>nil, "price"=>1.5}],
  "items_examlpe"=>[{"value"=>"Trader Joe's", "parameter_id"=>"Berkeley, California"}],
  "items_all_examlpe"=>
   [{"value"=>"Trader Joe's", "parameter_id"=>"%%name%%"},
    {"value"=>"Berkeley, California", "parameter_id"=>"%%location%%"},
    {"value"=>[{"name"=>"Jim Shoes"}, {"name"=>"Kay Oss"}], "parameter_id"=>"%%employees%%"},
-   {"value"=>[{"itemName"=>"Apples", "price"=>0.5, "unit"=>"lb"}, {"itemName"=>"Oranges", "price"=>2, "unit"=>"lb"}, {"itemName"=>"Bag of Carrots", "price"=>1.5, "unit"=>"count"}],
+   {"value"=>[{"itemname"=>"Apples", "price"=>0.5, "unit"=>"lb"}, {"itemname"=>"Oranges", "price"=>2, "unit"=>"lb"}, {"itemname"=>"Bag of Carrots", "price"=>1.5, "unit"=>"count"}],
     "parameter_id"=>"%%inventory%%"}],
  "hash_examlpe"=>{"value"=>"Trader Joe's", "parameter_id"=>"Berkeley, California"},
- "hash_array_examlpe"=>{"item_name"=>"Bag of Carrots", "price"=>1.5},
+ "array_values"=>["Trader Joe's", "Berkeley, California"],
+ "hash_array_examlpe"=>{"item_name"=>nil, "price"=>1.5},
  "merged"=>
   [{"name"=>"Jim Shoes"},
    {"name"=>"Kay Oss"},
-   {"itemName"=>"Apples", "price"=>0.5, "unit"=>"lb"},
-   {"itemName"=>"Oranges", "price"=>2, "unit"=>"lb"},
-   {"itemName"=>"Bag of Carrots", "price"=>1.5, "unit"=>"count"}]}
+   {"itemname"=>"Apples", "price"=>0.5, "unit"=>"lb"},
+   {"itemname"=>"Oranges", "price"=>2, "unit"=>"lb"},
+   {"itemname"=>"Bag of Carrots", "price"=>1.5, "unit"=>"count"}]}
 ```
 ### 2. Вложенные атрибуты
 Позволяет завернуть результат в хеш
