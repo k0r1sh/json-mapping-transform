@@ -34,6 +34,8 @@ class JsonMapping
   def default_transforms
     {
       'to_array' => -> (val) { Array.wrap(val).uniq.compact },
+      'downcase' => -> (val) { val.to_s.downcase },
+      'upcase' => -> (val) { val.to_s.upcase },
       'to_hash' => -> (array) { Array.wrap(array).uniq.collect{ |item| [item['key'], item['value']]}.to_h },
       'first_array_value' => -> (array) { array.is_a?(Array) ? array.first : array },
       'last_array_value' => -> (array) { array.is_a?(Array) ? array.last : array },
