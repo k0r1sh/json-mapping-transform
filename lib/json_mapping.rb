@@ -41,6 +41,7 @@ class JsonMapping
       'last_array_value' => -> (array) { array.is_a?(Array) ? array.last : array },
       'max_array_value' => -> (array) { array.is_a?(Array) ? array.max : array },
       'uniq_array' => -> (array) { array.is_a?(Array) ? array.uniq : array },
+      'array_size' => -> (array) { array.is_a?(Array) ? array.size : 0 },
       'hashes_array_filter' => -> (array, keys, value) { array.is_a?(Array) ? array.select{|h| h.dig(*keys.split('*')) == value } : array },
       'hash_value' => -> (hash, key) { hash.is_a?(Hash) ? hash[key] : hash },
       'hash_values' => -> (hash) { hash.is_a?(Hash) ? hash.values : hash },
