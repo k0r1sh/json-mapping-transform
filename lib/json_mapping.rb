@@ -114,7 +114,7 @@ class JsonMapping
           valid_hash = false if attribute['require'] && attr_hash[attribute['name']].blank?
           attributes_hash = attributes_hash.merge(attr_hash)
         end
-        attrs << attributes_hash if valid_hash
+        attrs << attributes_hash if !limited?(attributes_hash, schema['limits']) && valid_hash
       end
 
       attribute_values = attrs.length == 1 && schema['path'][-1] != '*' ? attrs[0] : attrs
