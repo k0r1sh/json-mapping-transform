@@ -157,6 +157,48 @@ module Conditions
   end
 
   ##
+  # Checks if value is less than a predicate
+  class DateLessThanCondition < BaseCondition
+    ##
+    # @param [Numeric] predicate
+    def initialize(predicate)
+      raise ConditionError, 'DateLessThan condition predicate must a DateTime' unless predicate.is_a?(String)
+      predicate = DateTime.parse(predicate)
+
+      super(predicate)
+    end
+
+    ##
+    # @param [DateTime] value
+    # @return [true] if +value < predicate+
+    # @return [false] if +value >= predicate+
+    def apply(value)
+      DateTime.parse(value) < @predicate
+    end
+  end
+
+  ##
+  # Checks if value is less than a predicate
+  class DateGreaterThanCondition < BaseCondition
+    ##
+    # @param [Numeric] predicate
+    def initialize(predicate)
+      raise ConditionError, 'DateGreaterThan condition predicate must a DateTime' unless predicate.is_a?(String)
+      predicate = DateTime.parse(predicate)
+
+      super(predicate)
+    end
+
+    ##
+    # @param [DateTime] value
+    # @return [true] if +value < predicate+
+    # @return [false] if +value >= predicate+
+    def apply(value)
+      DateTime.parse(value) > @predicate
+    end
+  end
+
+  ##
   # Checks if value is greater than a predicate
   class GreaterThanCondition < BaseCondition
     ##

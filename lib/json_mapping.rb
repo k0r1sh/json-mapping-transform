@@ -40,6 +40,7 @@ class JsonMapping
       'first_array_value' => -> (array) { array.is_a?(Array) ? array.first : array },
       'last_array_value' => -> (array) { array.is_a?(Array) ? array.last : array },
       'max_array_value' => -> (array) { array.is_a?(Array) ? array.max : array },
+      'max_datatime_array_value' => -> (array) { array.is_a?(Array) ? array.collect{|date_str| DateTime.parse(date_str)}.max : array },
       'uniq_array' => -> (array) { array.is_a?(Array) ? array.uniq : array },
       'array_size' => -> (array) { array.is_a?(Array) ? array.size : 0 },
       'hashes_array_filter' => -> (array, keys, value) { array.is_a?(Array) ? array.select{|h| h.dig(*keys.split('*')) == value } : array },
@@ -107,13 +108,17 @@ class JsonMapping
 
       attrs = []
       object_hash.each do |obj|
+        item_object = schema['conditions'] ? apply_conditions(obj, schema['conditions']) : obj
+        next unless item_object
+
         valid_hash = true
         attributes_hash = {}
         schema['attributes'].each do |attribute|
-          attr_hash = parse_object(obj, attribute)
+          attr_hash = parse_object(item_object, attribute)
           valid_hash = false if attribute['require'] && attr_hash[attribute['name']].blank?
           attributes_hash = attributes_hash.merge(attr_hash)
         end
+
         attrs << attributes_hash if !limited?(attributes_hash, schema['limits']) && valid_hash
       end
 
@@ -138,11 +143,14 @@ class JsonMapping
 
       items_values = []
       object_hash.each do |obj|
+        item_object = schema['conditions'] ? apply_conditions(obj, schema['conditions']) : obj
+        next unless item_object
+
         attributes_hash = {}
         schema['items'].each do |item|
           valid_hash = true
           item.each do |attribute|
-            attr_hash = parse_object(obj, attribute)
+            attr_hash = parse_object(item_object, attribute)
             valid_hash = false if attribute['require'] && attr_hash[attribute['name']].blank?
             attributes_hash = attributes_hash.merge(attr_hash)
           end
@@ -193,8 +201,11 @@ class JsonMapping
 
       items_values = {}
       object_hash.each do |obj|
+        item_object = schema['conditions'] ? apply_conditions(obj, schema['conditions']) : obj
+        next unless item_object
+
         schema['hash'].each do |item|
-          attr_hash = parse_object(obj, item)
+          attr_hash = parse_object(item_object, item)
           items_values.merge!(attr_hash)
         end
       end
